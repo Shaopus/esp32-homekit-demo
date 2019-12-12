@@ -1,6 +1,6 @@
 # esp32-homekit-demo
 
-[esp-homekit](https://github.com/maximkulkin/esp-homekit) 是 `Apple HomeKit` 配件服务器库，可以在 `esp8266` 和 `esp32` 上使用，以下是 [esp-homekit](https://github.com/maximkulkin/esp-homekit)  在 `esp32` 上的各个demo，由 [esp-homekit-demo](https://github.com/maximkulkin/esp-homekit-demo) 修改而来。
+[esp-homekit](https://github.com/maximkulkin/esp-homekit) 是 `Apple HomeKit` 配件服务器库，可以在 `esp8266` 和 `esp32` 上使用，以下是 [esp-homekit](https://github.com/maximkulkin/esp-homekit)  在 `esp32` 上的各个demo，由 [esp-homekit-demo](https://github.com/maximkulkin/esp-homekit-demo) 修改而来，一些组件也取自 [esp-iot-solution](https://github.com/espressif/esp-iot-solution) 。
 
 
 
@@ -14,6 +14,7 @@
 
 - [01-accessary_names](./examples/01-accessory_names)
 - [02-led](./examples/02-led)
+- [03-switch](./examples/03-switch)
 
 
 
