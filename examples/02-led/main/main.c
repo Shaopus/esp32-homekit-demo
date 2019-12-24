@@ -6,7 +6,6 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <driver/gpio.h>
 
 #include <driver/gpio.h>
 
@@ -18,7 +17,7 @@
 #define DEVICE_MODEL            "MyLED"
 #define FW_VERSION              "1.0"
 
-homekit_characteristic_t name           = HOMEKIT_CHARACTERISTIC_(NAME, "LED");
+homekit_characteristic_t name           = HOMEKIT_CHARACTERISTIC_(NAME, "PuHome");
 homekit_characteristic_t manufacturer   = HOMEKIT_CHARACTERISTIC_(MANUFACTURER,  DEVICE_MANUFACTURER);
 homekit_characteristic_t serial         = HOMEKIT_CHARACTERISTIC_(SERIAL_NUMBER, DEVICE_SERIAL);
 homekit_characteristic_t model          = HOMEKIT_CHARACTERISTIC_(MODEL,         DEVICE_MODEL);

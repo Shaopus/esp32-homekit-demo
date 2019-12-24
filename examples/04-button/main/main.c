@@ -16,25 +16,21 @@
 
 #define DEVICE_MANUFACTURER     "PuHome"
 #define DEVICE_SERIAL           "1234567890"
-#define DEVICE_MODEL            "MySWITCH"
+#define DEVICE_MODEL            "MyBUTTON"
 #define FW_VERSION              "1.0"
 
-const int led_gpio = 2;
 const int button_gpio = 0;
 
 static button_handle_t btn = NULL;
 
-void switch_on_callback(homekit_characteristic_t *_ch, homekit_value_t on, void *context);
 void on_wifi_ready();
 
-homekit_characteristic_t name           = HOMEKIT_CHARACTERISTIC_(NAME, "SWITCH");
+homekit_characteristic_t name           = HOMEKIT_CHARACTERISTIC_(NAME, "PuHome");
 homekit_characteristic_t manufacturer   = HOMEKIT_CHARACTERISTIC_(MANUFACTURER,  DEVICE_MANUFACTURER);
 homekit_characteristic_t serial         = HOMEKIT_CHARACTERISTIC_(SERIAL_NUMBER, DEVICE_SERIAL);
 homekit_characteristic_t model          = HOMEKIT_CHARACTERISTIC_(MODEL,         DEVICE_MODEL);
 homekit_characteristic_t revision       = HOMEKIT_CHARACTERISTIC_(FIRMWARE_REVISION, FW_VERSION);
-homekit_characteristic_t switch_on = HOMEKIT_CHARACTERISTIC_(
-    ON, false, .callback=HOMEKIT_CHARACTERISTIC_CALLBACK(switch_on_callback)
-);
+homekit_characteristic_t button_event   = HOMEKIT_CHARACTERISTIC_(PROGRAMMABLE_SWITCH_EVENT, 0);
 
 static char *device_name_get(void)
 {
@@ -91,71 +87,55 @@ static void wifi_init() {
     ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-void led_write(bool on) {
-    gpio_set_level(led_gpio, on ? 1 : 0);
-}
-
-void led_init() {
-    gpio_set_direction(led_gpio, GPIO_MODE_OUTPUT);
-    led_write(false);
-}
-
 void btn_tap_cb()
 {
-	printf("Toggling relay\n");
-	switch_on.value.bool_value = !switch_on.value.bool_value;
-	led_write(switch_on.value.bool_value);
-	homekit_characteristic_notify(&switch_on, switch_on.value);
+	printf("single press\n");
+	homekit_characteristic_notify(&button_event, HOMEKIT_UINT8(0));
+}
+
+void btn_long_cb()
+{
+	printf("long press\n");
+	homekit_characteristic_notify(&button_event, HOMEKIT_UINT8(2));
 }
 
 void button_init()
 {
     btn = iot_button_create((gpio_num_t)button_gpio, BUTTON_ACTIVE_LOW);
     iot_button_set_evt_cb(btn, BUTTON_CB_TAP, btn_tap_cb, "TAP");
+    iot_button_add_custom_cb(btn, 5, btn_long_cb, "LONG");
 }
 
-void switch_on_callback(homekit_characteristic_t *_ch, homekit_value_t on, void *context) {
-    led_write(switch_on.value.bool_value);
-}
 
-void switch_identify_task(void *_args) {
-    for (int i=0; i<3; i++) {
-        for (int j=0; j<2; j++) {
-            led_write(true);
-            vTaskDelay(100 / portTICK_PERIOD_MS);
-            led_write(false);
-            vTaskDelay(100 / portTICK_PERIOD_MS);
-        }
-
-        vTaskDelay(250 / portTICK_PERIOD_MS);
-    }
-
-    led_write(false);
-
-    vTaskDelete(NULL);
-}
-
-void switch_identify(homekit_value_t _value) {
-    printf("LED identify\n");
-    xTaskCreate(switch_identify_task, "LED identify", 512, NULL, 2, NULL);
+void button_identify(homekit_value_t _value) {
+    printf("BUTTON identify\n");
+    
 }
 
 homekit_accessory_t *accessories[] = {
-    HOMEKIT_ACCESSORY(.id=1, .category=homekit_accessory_category_lightbulb, .services=(homekit_service_t*[]){
-        HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]){
-            &name,
-            &manufacturer,
-            &serial,
-            &model,
-            &revision,
-            HOMEKIT_CHARACTERISTIC(IDENTIFY, switch_identify),
-            NULL
-        }),
-        HOMEKIT_SERVICE(SWITCH, .primary=true, .characteristics=(homekit_characteristic_t*[]){
-            HOMEKIT_CHARACTERISTIC(NAME, "Switch"),
-            &switch_on,
-            NULL
-        }),
+    HOMEKIT_ACCESSORY(
+        .id=1,
+        .category=homekit_accessory_category_programmable_switch, 
+        .services=(homekit_service_t*[]){
+            HOMEKIT_SERVICE(
+                ACCESSORY_INFORMATION, 
+                .characteristics=(homekit_characteristic_t*[]){
+                &name,
+                &manufacturer,
+                &serial,
+                &model,
+                &revision,
+                HOMEKIT_CHARACTERISTIC(IDENTIFY, button_identify),
+                NULL
+            }),
+            HOMEKIT_SERVICE(
+                STATELESS_PROGRAMMABLE_SWITCH, 
+                .primary=true, 
+                .characteristics=(homekit_characteristic_t*[]){
+                HOMEKIT_CHARACTERISTIC(NAME, "Button"),
+                &button_event,
+                NULL
+            }),
         NULL
     }),
     NULL
@@ -181,8 +161,7 @@ void app_main(void) {
     ESP_ERROR_CHECK( ret );
 	
 	name.value = HOMEKIT_STRING(device_name_get());
-	
-    led_init();
+
 	button_init();	
     wifi_init();
 
